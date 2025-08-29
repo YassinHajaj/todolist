@@ -86,7 +86,59 @@ main {
     gap: 12px;
     padding: 12px;
     border-bottom: 1px solid #e2e8f0;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    cursor: move;
+    position: relative;
+}
+
+.todo-item.dragging {
+    opacity: 0.5;
+    transform: rotate(3deg);
+    z-index: 1000;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.todo-item.drag-over {
+    background: #f7fafc;
+}
+
+.todo-item.drag-over-top::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #4a5568;
+    border-radius: 1px;
+}
+
+.todo-item.drag-over-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #4a5568;
+    border-radius: 1px;
+}
+
+.drag-handle {
+    color: #a0aec0;
+    font-size: 12px;
+    cursor: grab;
+    padding: 4px;
+    user-select: none;
+    transition: color 0.2s;
+}
+
+.drag-handle:hover {
+    color: #4a5568;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
 }
 
 .todo-item:hover {

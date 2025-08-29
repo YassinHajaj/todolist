@@ -6,6 +6,7 @@ class TodoApp {
         this.todoList = document.getElementById('todoList');
         this.todoCount = document.getElementById('todoCount');
         this.clearCompletedBtn = document.getElementById('clearCompleted');
+        this.draggedItem = null;
         
         this.init();
     }
@@ -28,10 +29,12 @@ class TodoApp {
             id: Date.now(),
             text: text,
             completed: false,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            order: this.todos.length === 0 ? 0 : Math.max(...this.todos.map(t => t.order || 0)) + 1
         };
         
         this.todos.unshift(todo);
+        this.sortTodos();
         this.todoInput.value = '';
         this.saveTodos();
         this.render();
@@ -96,6 +99,33 @@ class TodoApp {
         this.render();
     }
     
+    sortTodos() {
+        this.todos.sort((a, b) => {
+            if (a.order !== undefined && b.order !== undefined) {
+                return a.order - b.order;
+            }
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+    }
+    
+    reorderTodos(draggedId, targetId, insertBefore = true) {
+        const draggedIndex = this.todos.findIndex(t => t.id === draggedId);
+        const targetIndex = this.todos.findIndex(t => t.id === targetId);
+        
+        if (draggedIndex === -1 || targetIndex === -1) return;
+        
+        const draggedTodo = this.todos.splice(draggedIndex, 1)[0];
+        const newIndex = insertBefore ? targetIndex : targetIndex + 1;
+        this.todos.splice(newIndex, 0, draggedTodo);
+        
+        this.todos.forEach((todo, index) => {
+            todo.order = index;
+        });
+        
+        this.saveTodos();
+        this.render();
+    }
+    
     render() {
         this.todoList.innerHTML = '';
         
@@ -107,7 +137,9 @@ class TodoApp {
                 li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
                 li.setAttribute('data-id', todo.id);
                 
+                li.draggable = true;
                 li.innerHTML = `
+                    <div class="drag-handle">⋮⋮</div>
                     <input 
                         type="checkbox" 
                         class="todo-checkbox" 
@@ -119,11 +151,69 @@ class TodoApp {
                     <button class="delete-btn" onclick="app.deleteTodo(${todo.id})">Delete</button>
                 `;
                 
+                this.addDragListeners(li);
+                
                 this.todoList.appendChild(li);
             });
         }
         
         this.updateStats();
+    }
+    
+    addDragListeners(li) {
+        li.addEventListener('dragstart', (e) => {
+            this.draggedItem = li;
+            li.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        li.addEventListener('dragend', () => {
+            if (this.draggedItem) {
+                this.draggedItem.classList.remove('dragging');
+                this.draggedItem = null;
+            }
+            document.querySelectorAll('.todo-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+        });
+        
+        li.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            if (this.draggedItem && this.draggedItem !== li) {
+                const rect = li.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const isAbove = e.clientY < midY;
+                
+                li.classList.add('drag-over');
+                li.classList.toggle('drag-over-top', isAbove);
+                li.classList.toggle('drag-over-bottom', !isAbove);
+            }
+        });
+        
+        li.addEventListener('dragleave', (e) => {
+            if (!li.contains(e.relatedTarget)) {
+                li.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+            }
+        });
+        
+        li.addEventListener('drop', (e) => {
+            e.preventDefault();
+            
+            if (this.draggedItem && this.draggedItem !== li) {
+                const rect = li.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const insertBefore = e.clientY < midY;
+                
+                const draggedId = parseInt(this.draggedItem.getAttribute('data-id'));
+                const targetId = parseInt(li.getAttribute('data-id'));
+                
+                this.reorderTodos(draggedId, targetId, insertBefore);
+            }
+            
+            li.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+        });
     }
     
     updateStats() {
@@ -153,7 +243,20 @@ class TodoApp {
     loadTodos() {
         try {
             const saved = localStorage.getItem('todolist-todos');
-            return saved ? JSON.parse(saved) : [];
+            const todos = saved ? JSON.parse(saved) : [];
+            
+            todos.forEach((todo, index) => {
+                if (todo.order === undefined) {
+                    todo.order = index;
+                }
+            });
+            
+            return todos.sort((a, b) => {
+                if (a.order !== undefined && b.order !== undefined) {
+                    return a.order - b.order;
+                }
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
         } catch (error) {
             console.error('Failed to load todos from localStorage:', error);
             return [];
