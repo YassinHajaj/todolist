@@ -52,6 +52,44 @@ class TodoApp {
         this.render();
     }
     
+    editTodo(id) {
+        const todoElement = document.querySelector(`[data-id="${id}"]`);
+        const textSpan = todoElement.querySelector('.todo-text');
+        const currentText = this.todos.find(t => t.id === id).text;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'todo-edit-input';
+        input.value = currentText;
+        input.maxLength = 100;
+        
+        textSpan.style.display = 'none';
+        textSpan.parentNode.insertBefore(input, textSpan.nextSibling);
+        input.focus();
+        input.select();
+        
+        const saveEdit = () => {
+            const newText = input.value.trim();
+            if (newText && newText !== currentText) {
+                const todo = this.todos.find(t => t.id === id);
+                todo.text = newText;
+                this.saveTodos();
+            }
+            this.render();
+        };
+        
+        const cancelEdit = () => {
+            this.render();
+        };
+        
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') saveEdit();
+            if (e.key === 'Escape') cancelEdit();
+        });
+        
+        input.addEventListener('blur', saveEdit);
+    }
+    
     clearCompleted() {
         this.todos = this.todos.filter(t => !t.completed);
         this.saveTodos();
@@ -67,6 +105,7 @@ class TodoApp {
             this.todos.forEach(todo => {
                 const li = document.createElement('li');
                 li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                li.setAttribute('data-id', todo.id);
                 
                 li.innerHTML = `
                     <input 
@@ -75,7 +114,8 @@ class TodoApp {
                         ${todo.completed ? 'checked' : ''}
                         onchange="app.toggleTodo(${todo.id})"
                     >
-                    <span class="todo-text">${this.escapeHtml(todo.text)}</span>
+                    <span class="todo-text" ondblclick="app.editTodo(${todo.id})">${this.escapeHtml(todo.text)}</span>
+                    <button class="edit-btn" onclick="app.editTodo(${todo.id})">Edit</button>
                     <button class="delete-btn" onclick="app.deleteTodo(${todo.id})">Delete</button>
                 `;
                 
