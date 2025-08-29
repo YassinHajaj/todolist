@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Todo List</title>
+    <title>Todo List</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Todo List</h1>
-        </header>
-        
-        <main>
+        <div class="card">
+            <div class="header">
+                <h1>Hello Jack.</h1>
+                <p>You have work today</p>
+            </div>
+            
             <div class="add-todo">
                 <input type="text" id="todoInput" placeholder="What needs to be done?" maxlength="100">
                 <button id="addBtn">Add</button>
@@ -26,7 +27,7 @@
                 <span id="todoCount">0 items</span>
                 <button id="clearCompleted">Clear Completed</button>
             </div>
-        </main>
+        </div>
     </div>
     
     <script src="script.js"></script>

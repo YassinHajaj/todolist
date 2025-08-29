@@ -173,7 +173,7 @@ class TodoApp {
                 this.draggedItem = null;
             }
             document.querySelectorAll('.todo-item').forEach(item => {
-                item.classList.remove('drag-over');
+                item.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
             });
         });
         
